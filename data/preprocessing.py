@@ -3,9 +3,10 @@ import cv2
 import random
 import argparse
 from tqdm import tqdm
-from face_extract import FaceExtractor
-from splits import get_splits
-from metadata import MetadataWriter
+import numpy as np
+from data.face_extract import FaceExtractor
+from data.splits import get_splits
+from data.metadata import MetadataWriter
 
 
 def sample_frames(video_path, num_frames=8):
