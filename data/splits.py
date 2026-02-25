@@ -125,6 +125,54 @@ def get_celebdf_splits(raw_path):
 
 def get_dfd_splits(raw_path):
 
-    print("DFD support added but not active for review phase.")
+    splits = {"train": [], "val": [], "test": []}
 
-    return {"train": [], "val": [], "test": []}
+    fake_root = os.path.join(
+        raw_path,
+        "DFD_manipulated_sequences",
+        "DFD_manipulated_sequences"
+    )
+
+    real_root = os.path.join(
+        raw_path,
+        "DFD_original_sequences"
+    )
+
+    video_entries = []
+
+    # Load fake videos
+    for vid in os.listdir(fake_root):
+        if vid.endswith(".mp4"):
+            video_entries.append({
+                "path": os.path.join(fake_root, vid),
+                "label": 1,
+                "manipulation": "fake",
+                "video_id": vid.replace(".mp4", "")
+            })
+
+    # Load real videos
+    for vid in os.listdir(real_root):
+        if vid.endswith(".mp4"):
+            video_entries.append({
+                "path": os.path.join(real_root, vid),
+                "label": 0,
+                "manipulation": "real",
+                "video_id": vid.replace(".mp4", "")
+            })
+
+    random.shuffle(video_entries)
+
+    n = len(video_entries)
+    train_end = int(0.8 * n)
+    val_end = int(0.9 * n)
+
+    splits["train"] = video_entries[:train_end]
+    splits["val"] = video_entries[train_end:val_end]
+    splits["test"] = video_entries[val_end:]
+
+    print(f"DFD loaded with {n} videos")
+    print(f"Train: {len(splits['train'])}, "
+          f"Val: {len(splits['val'])}, "
+          f"Test: {len(splits['test'])}")
+
+    return splits
