@@ -25,6 +25,12 @@ class HighPass:
 
 
 def get_ssl_transforms(image_size=224):
+
+    normalize = T.Normalize(
+        mean=(0.485, 0.456, 0.406),
+        std=(0.229, 0.224, 0.225)
+    )
+
     base_aug = T.Compose([
         T.RandomResizedCrop(image_size, scale=(0.8, 1.0)),
         T.RandomHorizontalFlip(),
@@ -32,6 +38,7 @@ def get_ssl_transforms(image_size=224):
         T.RandomGrayscale(p=0.2),
         T.GaussianBlur(3),
         T.ToTensor(),
+        normalize
     ])
 
     highpass_aug = T.Compose([
@@ -39,6 +46,7 @@ def get_ssl_transforms(image_size=224):
         T.RandomHorizontalFlip(),
         HighPass(),
         T.ToTensor(),
+        normalize
     ])
 
     return base_aug, highpass_aug

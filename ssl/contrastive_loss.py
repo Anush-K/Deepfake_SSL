@@ -3,24 +3,20 @@ import torch.nn.functional as F
 
 
 def nt_xent_loss(z1, z2, temperature=0.1):
-    """
-    z1, z2: normalized embeddings [B, D]
-    """
 
     B = z1.size(0)
 
-    z = torch.cat([z1, z2], dim=0)  # 2B x D
+    z = torch.cat([z1, z2], dim=0)  # [2B, D]
     sim = torch.mm(z, z.t()) / temperature
 
-    # mask self similarity
+    # mask self-similarity
     mask = torch.eye(2 * B, device=z.device).bool()
-    sim = sim.masked_fill(mask, -1e9)
+    sim.masked_fill_(mask, float('-inf'))
 
-    # positive pairs
-    positives = torch.cat([
-        torch.arange(B, 2*B),
-        torch.arange(0, B)
-    ]).to(z.device)
+    # create positive labels
+    targets = torch.arange(B, 2 * B, device=z.device)
+    targets = torch.cat([targets, torch.arange(0, B, device=z.device)])
 
-    loss = F.cross_entropy(sim, positives)
+    loss = F.cross_entropy(sim, targets)
+
     return loss

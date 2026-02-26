@@ -9,7 +9,7 @@ class SSLDataset(Dataset):
     def __init__(self, csv_files, image_size=224):
 
         self.df = pd.concat([pd.read_csv(f) for f in csv_files])
-        self.df = self.df[self.df["split"] != "test"]
+        self.df = self.df[self.df["split"] != "test"].reset_index(drop=True)
         self.base_aug, self.highpass_aug = get_ssl_transforms(image_size)
 
     def __len__(self):
