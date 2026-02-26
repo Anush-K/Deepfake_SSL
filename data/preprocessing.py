@@ -70,7 +70,8 @@ def process_dataset(dataset_name, raw_path, processed_path, debug=False):
                 )
                 os.makedirs(save_dir, exist_ok=True)
 
-                filename  = f"{video_id}_{i}.jpg"
+                # filename  = f"{video_id}_{i}.jpg"
+                filename = f"{manipulation}_{video_id}_{i}.jpg"
                 save_path = os.path.join(save_dir, filename)
 
                 cv2.imwrite(save_path, face, [int(cv2.IMWRITE_JPEG_QUALITY), 90])

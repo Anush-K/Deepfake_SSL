@@ -1,8 +1,8 @@
 import torch.nn as nn
 import timm
 import torch.nn.functional as F
-from ssl.gem import GeM
-from ssl.projection_head import ProjectionHead
+from ssl_simclr.gem import GeM
+from ssl_simclr.projection_head import ProjectionHead
 
 
 class SSLModel(nn.Module):

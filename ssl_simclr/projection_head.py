@@ -9,7 +9,8 @@ class ProjectionHead(nn.Module):
             nn.Linear(in_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True),
-            nn.Linear(hidden_dim, out_dim)
+            nn.Linear(hidden_dim, out_dim),
+            nn.BatchNorm1d(out_dim)
         )
 
     def forward(self, x):

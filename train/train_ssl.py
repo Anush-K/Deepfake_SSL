@@ -1,8 +1,10 @@
+import os
+import glob
 import torch
 from torch.utils.data import DataLoader
-from ssl.ssl_dataset import SSLDataset
-from ssl.ssl_model import SSLModel
-from ssl.contrastive_loss import nt_xent_loss
+from ssl_simclr.ssl_dataset import SSLDataset
+from ssl_simclr.ssl_model import SSLModel
+from ssl_simclr.contrastive_loss import nt_xent_loss
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
@@ -32,7 +34,25 @@ def train_ssl(csv_files, device="cuda", epochs=50, batch_size=64):
 
     scaler = torch.cuda.amp.GradScaler()
 
-    for epoch in range(epochs):
+    # Resume from checkpoint if exists
+    start_epoch = 0
+    checkpoint_dir = "/content/drive/MyDrive/DF_Datasets/checkpoints"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    # Find latest checkpoint
+    checkpoints = sorted(glob.glob(f"{checkpoint_dir}/ssl_epoch_*.pt"))
+    if checkpoints:
+        latest = checkpoints[-1]
+        print(f"Resuming from {latest}")
+        ckpt = torch.load(latest)
+        model.load_state_dict(ckpt['model_state_dict'])
+        optimizer.load_state_dict(ckpt['optimizer_state_dict'])
+        scheduler.load_state_dict(ckpt['scheduler_state_dict'])
+        start_epoch = ckpt['epoch']
+        print(f"Resumed from epoch {start_epoch}")
+
+
+    for epoch in range(start_epoch, epochs):
 
         model.train()
         total_loss = 0
@@ -61,10 +81,13 @@ def train_ssl(csv_files, device="cuda", epochs=50, batch_size=64):
         #print(f"Epoch {epoch+1}/{epochs} | Loss: {total_loss/len(loader):.4f}")
 
         if (epoch + 1) % 5 == 0:
-            torch.save(
-                model.state_dict(),
-                f"/content/drive/MyDrive/DF_Datasets/ssl_epoch_{epoch+1}.pth"
-            )
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': avg_loss,
+            }, f"/content/drive/MyDrive/DF_Datasets/checkpoints/ssl_epoch_{epoch+1}.pt")
 
     torch.save(
         model.state_dict(),
