@@ -18,4 +18,4 @@ class MetadataWriter:
     def save(self):
         df = pd.DataFrame(self.entries)
         df.to_csv(self.save_path, index=False)
-        print(f"Metadata saved to {self.save_path}")
+        print(f"Metadata saved to {self.save_path} ({len(df)} rows)")
