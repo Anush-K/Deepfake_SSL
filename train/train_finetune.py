@@ -39,8 +39,8 @@ RESULTS_DIR    = "results"
 TRAIN_DATASET  = "FFPP"
 TEST_DATASETS  = ["FFPP", "CelebDF"]
 
-SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
-
+#SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
+SSL_CHECKPOINT = "ssl_final.pth"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR,    exist_ok=True)
 
