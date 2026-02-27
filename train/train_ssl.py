@@ -34,12 +34,12 @@ def train_ssl(csv_files, device="cuda", epochs=50, batch_size=64):
 
     scaler = torch.cuda.amp.GradScaler()
 
-    # Resume from checkpoint if exists
-    start_epoch = 0
-    checkpoint_dir = "/content/drive/MyDrive/DF_Datasets/checkpoints"
+    # -------- Checkpoint Setup --------
+    checkpoint_dir = "checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    # Find latest checkpoint
+    start_epoch = 0
+
     checkpoints = sorted(glob.glob(f"{checkpoint_dir}/ssl_epoch_*.pt"))
     if checkpoints:
         latest = checkpoints[-1]
@@ -47,11 +47,10 @@ def train_ssl(csv_files, device="cuda", epochs=50, batch_size=64):
         ckpt = torch.load(latest)
         model.load_state_dict(ckpt['model_state_dict'])
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
-        scheduler.load_state_dict(ckpt['scheduler_state_dict'])
         start_epoch = ckpt['epoch']
         print(f"Resumed from epoch {start_epoch}")
 
-
+    # -------- Training Loop --------
     for epoch in range(start_epoch, epochs):
 
         model.train()
@@ -75,21 +74,37 @@ def train_ssl(csv_files, device="cuda", epochs=50, batch_size=64):
 
             total_loss += loss.item()
 
-        current_lr = optimizer.param_groups[0]["lr"]
         avg_loss = total_loss / len(loader)
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | LR: {current_lr:.6f}")
-        #print(f"Epoch {epoch+1}/{epochs} | Loss: {total_loss/len(loader):.4f}")
+        current_lr = optimizer.param_groups[0]["lr"]
 
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | LR: {current_lr:.6f}")
+
+        # Save every 5 epochs
         if (epoch + 1) % 5 == 0:
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': avg_loss,
-            }, f"/content/drive/MyDrive/DF_Datasets/checkpoints/ssl_epoch_{epoch+1}.pt")
+            }, f"{checkpoint_dir}/ssl_epoch_{epoch+1}.pt")
 
-    torch.save(
-        model.state_dict(),
-        "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
+    # Final save
+    torch.save(model.state_dict(), "ssl_final.pth")
+    print("SSL training complete. Model saved as ssl_final.pth")
+    
+
+if __name__ == "__main__":
+
+    csv_files = [
+        "FFPP_metadata.csv",
+        "CelebDF_metadata.csv"
+    ]
+
+    train_ssl(
+        csv_files=csv_files,
+        device="cuda",
+        epochs=50,
+        batch_size=64
     )
+
+    print("Running t-SNE visualization...")
+    os.system("python train/run_tsne.py")
