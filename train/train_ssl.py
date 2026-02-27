@@ -102,7 +102,7 @@ if __name__ == "__main__":
     train_ssl(
         csv_files=csv_files,
         device="cuda",
-        epochs=50,
+        epochs=2,
         batch_size=64
     )
 
