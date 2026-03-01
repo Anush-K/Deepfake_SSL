@@ -33,8 +33,8 @@ PATIENCE      = 3       # early stopping patience (epochs without val AUC improv
 
 # Paths — server paths, no Drive prefix
 PROCESSED_BASE = "."    # metadata CSVs are in same dir; image paths in CSV are relative or absolute
-CHECKPOINT_DIR = "checkpoints_run2_ssl_unfreeze"
-RESULTS_DIR    = "results_run2_ssl_unfreeze"
+CHECKPOINT_DIR = "checkpoints_ssl_unfreeze"
+RESULTS_DIR    = "results_ssl_unfreeze"
 
 TRAIN_DATASET  = "FFPP"
 TEST_DATASETS  = ["FFPP", "CelebDF"]

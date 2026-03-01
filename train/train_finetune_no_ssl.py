@@ -33,8 +33,8 @@ PATIENCE      = 3       # early stopping patience (epochs without val AUC improv
 
 # Paths — server paths, no Drive prefix
 PROCESSED_BASE = "."    # metadata CSVs are in same dir; image paths in CSV are relative or absolute
-CHECKPOINT_DIR = "checkpoints_run1_imagenet_baseline"
-RESULTS_DIR    = "results_run1_imagenet_baseline"
+CHECKPOINT_DIR = "checkpoints_nossl"
+RESULTS_DIR    = "results_nossl"
 
 TRAIN_DATASET  = "FFPP"
 TEST_DATASETS  = ["FFPP", "CelebDF"]
