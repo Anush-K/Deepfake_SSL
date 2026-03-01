@@ -26,7 +26,7 @@ from ssl_simclr.gem import GeM
 DEVICE        = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE    = 64
 EPOCHS        = 15
-BACKBONE_LR   = 1e-5    # low LR for pretrained backbone — preserve SSL representations
+BACKBONE_LR   = 5e-5    # low LR for pretrained backbone — preserve SSL representations
 CLASSIFIER_LR = 1e-4    # higher LR for new classifier head
 WEIGHT_DECAY  = 1e-4
 PATIENCE      = 3       # early stopping patience (epochs without val AUC improvement)
@@ -625,8 +625,8 @@ def train():
     pos_weight = torch.tensor([n_real / n_fake], dtype=torch.float32).to(DEVICE)
     print(f"BCE pos_weight (real/fake ratio): {pos_weight.item():.4f}\n")
 
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-
+    #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion = nn.BCEWithLogitsLoss()
     scaler = torch.amp.GradScaler("cuda")
 
     # ── Training Loop ─────────────────────────────────────────
