@@ -33,14 +33,14 @@ PATIENCE      = 3       # early stopping patience (epochs without val AUC improv
 
 # Paths — server paths, no Drive prefix
 PROCESSED_BASE = "."    # metadata CSVs are in same dir; image paths in CSV are relative or absolute
-CHECKPOINT_DIR = "checkpoints"
-RESULTS_DIR    = "results"
+CHECKPOINT_DIR = "checkpoints_run2_ssl_unfreeze"
+RESULTS_DIR    = "results_run2_ssl_unfreeze"
 
 TRAIN_DATASET  = "FFPP"
 TEST_DATASETS  = ["FFPP", "CelebDF"]
 
-#SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
-SSL_CHECKPOINT = "ssl_final.pth"
+# RUN 2: SSL weights from Drive (Colab path)
+SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR,    exist_ok=True)
 
@@ -588,10 +588,20 @@ def train():
 
     # ── Model ────────────────────────────────────────────────
     model = FineTuneModel(SSL_CHECKPOINT).to(DEVICE)
-    freeze_early_layers(model)
+
+    # ── RUN 2 CHANGE: freeze_early_layers() is NOT called ────
+    # All backbone blocks (0–7), GeM, and classifier are fully trainable.
+    # Purpose: diagnose whether freezing blocks 0-2 in the original run
+    # was helping or hurting. If AUC improves here, those early blocks
+    # contained learnable artifact-relevant representations that the freeze
+    # was locking out. If AUC stays the same or drops, freezing was correct.
+    # Everything else (sampler, pos_weight, LR values, threshold protocol)
+    # is identical to the original run — this is the only change.
 
     # ── Optimizer: layer-wise learning rates ─────────────────
-    backbone_params   = [p for p in model.backbone.parameters() if p.requires_grad]
+    # Since nothing is frozen, all backbone params are collected directly
+    # (no requires_grad filter needed — all are True)
+    backbone_params   = list(model.backbone.parameters())
     pool_params       = list(model.pool.parameters())
     classifier_params = list(model.classifier.parameters())
 

@@ -33,14 +33,14 @@ PATIENCE      = 3       # early stopping patience (epochs without val AUC improv
 
 # Paths — server paths, no Drive prefix
 PROCESSED_BASE = "."    # metadata CSVs are in same dir; image paths in CSV are relative or absolute
-CHECKPOINT_DIR = "checkpoints"
-RESULTS_DIR    = "results"
+CHECKPOINT_DIR = "checkpoints_run1_imagenet_baseline"
+RESULTS_DIR    = "results_run1_imagenet_baseline"
 
 TRAIN_DATASET  = "FFPP"
 TEST_DATASETS  = ["FFPP", "CelebDF"]
 
-#SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
-SSL_CHECKPOINT = "ssl_final.pth"
+# RUN 1: No SSL. ImageNet pretrained weights loaded directly in FineTuneModel.
+SSL_CHECKPOINT = None  # not used — see FineTuneModel below
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR,    exist_ok=True)
 
@@ -211,50 +211,42 @@ def build_balanced_sampler(dataset):
 
 class FineTuneModel(nn.Module):
     """
-    EfficientNet-B4 backbone + GeM pooling + linear classifier.
+    RUN 1 — ImageNet-only baseline. No SSL checkpoint loaded.
 
-    GeM pooling is preserved from SSL pretraining because:
-    - The backbone was trained with GeM — its feature maps are optimized for GeM aggregation
-    - Switching to avgpool would misalign the fine-tuning representations from SSL representations
-    - GeM's learnable p parameter continues to adapt during fine-tuning
+    The ONLY change from the original FineTuneModel:
+      pretrained=True  (was pretrained=False + SSL weight loading)
+
+    EfficientNet-B4 is initialised with standard ImageNet weights from timm.
+    GeM pooling is initialised fresh (random p=3, not loaded from SSL).
+    Classifier is initialised fresh identically to the original.
+
+    Everything else in the training pipeline is identical:
+      - Same balanced sampler
+      - Same pos_weight
+      - Same freeze_early_layers (blocks 0-2 frozen)
+      - Same layer-wise LR (backbone 1e-5, classifier 1e-4)
+      - Same epochs, patience, threshold protocol
+
+    Purpose: establish whether SSL pretraining adds value over ImageNet
+    pretraining alone. If original SSL run > this baseline, SSL is justified.
+    If this matches or beats SSL, the SSL phase needs investigation.
     """
-    def __init__(self, ssl_checkpoint):
+    def __init__(self, ssl_checkpoint=None):  # ssl_checkpoint ignored in Run 1
         super().__init__()
 
+        # ── RUN 1 CHANGE: pretrained=True, no SSL weight loading ──
         self.backbone = timm.create_model(
             "efficientnet_b4",
-            pretrained=False,
+            pretrained=True,   # ImageNet weights from timm (was pretrained=False)
             num_classes=0
         )
+        # GeM and classifier initialised fresh — same as original
         self.pool       = GeM()
         self.classifier = nn.Linear(1792, 1)
 
-        # Load SSL weights by key prefix
-        # SSL checkpoint has keys: backbone.xxx, pool.xxx, projector.xxx
-        # We load backbone and pool; projector is discarded (was for contrastive task only)
-        print(f"Loading SSL weights from: {ssl_checkpoint}")
-        ssl_state = torch.load(ssl_checkpoint, map_location="cpu")
+        print("RUN 1 — ImageNet baseline: loaded pretrained=True EfficientNet-B4")
+        print("No SSL checkpoint. GeM and classifier initialised fresh.")
 
-        backbone_state = {
-            k.replace("backbone.", ""): v
-            for k, v in ssl_state.items()
-            if k.startswith("backbone.")
-        }
-        pool_state = {
-            k.replace("pool.", ""): v
-            for k, v in ssl_state.items()
-            if k.startswith("pool.")
-        }
-
-        missing_b = self.backbone.load_state_dict(backbone_state, strict=False)
-        missing_p = self.pool.load_state_dict(pool_state, strict=False)
-
-        print(f"Backbone — missing: {missing_b.missing_keys[:3]}... "
-              f"unexpected: {missing_b.unexpected_keys[:3]}")
-        print(f"Pool     — missing: {missing_p.missing_keys}, "
-              f"unexpected: {missing_p.unexpected_keys}")
-
-        # Classifier initialized with small weights for stable early training
         nn.init.normal_(self.classifier.weight, std=0.01)
         nn.init.zeros_(self.classifier.bias)
 
