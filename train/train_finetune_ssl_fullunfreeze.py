@@ -41,6 +41,7 @@ TEST_DATASETS  = ["FFPP", "CelebDF"]
 
 # RUN 2: SSL weights from Drive (Colab path)
 SSL_CHECKPOINT = "/content/drive/MyDrive/DF_Datasets/ssl_final.pth"
+#SSL_CHECKPOINT = "ssl_final.pth"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR,    exist_ok=True)
 
